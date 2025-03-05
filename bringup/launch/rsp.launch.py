@@ -26,6 +26,14 @@ def generate_launch_description():
     # Get URDF via xacro
 
     package_name='ai_bot' #<--- CHANGE ME
+    #share_dir_MPU = get_package_share_directory('ros2_mpu6050')
+
+    #param_file_MPU = LaunchConfiguration('param_file')
+
+   # params_arg_MPU = DeclareLaunchArgument('param_file',
+                                       # default_value=os.path.join(share_dir_MPU, 'config', 'params.yaml'),
+                                       # description='Path to the ROS2 parameter file')
+
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
@@ -133,7 +141,19 @@ def generate_launch_description():
         
         #parameters=["params_file", map_params],
     )
-
+   # mpu6050_sensor = Node(
+       # package='ros2_mpu6050',
+       # executable='ros2_mpu6050',
+       # name='mpu6050_sensor',
+        #output="screen",
+       # emulate_tty=True,
+        #parameters=[param_file_MPU]
+    #)
+    #imu_broadcaster_spawner = Node(
+       # package="controller_manager",
+       # executable="spawner",
+        #arguments=["imu_sensor_broadcaster", "--controller-manager", "/controller_manager"],
+   # )
     nodes = [
         control_node,
         robot_state_pub_node,
@@ -144,6 +164,9 @@ def generate_launch_description():
         #delay_rviz_after_joint_state_broadcaster_spawner,
         #delay_robot_controller_spawner_after_joint_state_broadcaster_spawner,
         urg_node,
+       # params_arg_MPU,
+       # mpu6050_sensor,
+       # imu_broadcaster_spawner,
         #makemap
     ]
 
