@@ -6,7 +6,7 @@
   <xacro:arg name="sim_mode" default="false"/>
   <!--
   <xacro:macro name="diffbot" params="prefix"> -->
-    <xacro:include filename="$(find ai_bot)/urdf/ai_bot_model_v3.xacro" />
+    <xacro:include filename="$(find ai_bot)/urdf/ai_bot_model_v4.xacro" />
    <!-- <xacro:include filename="$(find diffdrive_arduino)/urdf/lidar.xacro" /> -->
   <!--  <xacro:include filename="$(find diffdrive_arduino)/urdf/camera.xacro" />     -->
  <!-- </xacro:macro> -->
