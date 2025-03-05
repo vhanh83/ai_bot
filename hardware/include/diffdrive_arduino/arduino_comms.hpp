@@ -61,6 +61,7 @@ public:
       std::string response = "";
       serial_conn_.FlushIOBuffers(); // Just in case
       serial_conn_.Write(msg_to_send); 
+      std::this_thread::sleep_for(std::chrono::milliseconds(50)); // Add delay before reading
       try
       {
         // Responses end with \r\n so we will read up to (and including) the \n.
@@ -78,7 +79,28 @@ public:
 
       return response;
   }
+  std::string send_msg_velocity(const std::string &msg_to_send, bool print_output = false)
+  {
+      std::string response = "";
+      serial_conn_.FlushIOBuffers(); // Just in case
+      serial_conn_.Write(msg_to_send); 
+      //try
+     // {
+        // Responses end with \r\n so we will read up to (and including) the \n.
+        //serial_conn_.ReadLine(response, '\n', timeout_ms_);
+     // }
+      //catch (const LibSerial::ReadTimeout&)
+     // {
+         // std::cerr << "The ReadByte() call has timed out." << std::endl ;
+     // }
+      
+      if (print_output)
+      {
+        std::cout << "Sent: " << msg_to_send << " Recv: " << response << std::endl;
+      }
 
+      return response;
+  }
 
   void send_empty_msg()
   {
@@ -105,36 +127,32 @@ public:
           splittedStrings.push_back(str);
       return splittedStrings;
   }
-  void read_encoder_values(int &val_1, int &val_2)
-  {
-    std::string responseEn1 = send_msg("$GE#");//std::cout << "E1" << std::endl;
-    //std::string responseEn2 = send_msg("$GE;2;0;0#");//std::cout << "E2" << std::endl;
+  bool read_encoder_values(int &val_1, int &val_2)
+{
+    std::string responseEn1 = send_msg("$GE#");
 
     std::vector<std::string> resultsEnc1;
-
-    //std::vector<std::string> resultsEnc2;
-
     boost::split(resultsEnc1, responseEn1, [](char c){return c == ';';});
 
-   // boost::split(resultsEnc2, responseEn2, [](char c){return c == ';';});
+    if (resultsEnc1.size() < 3)  // Ensure there are enough elements
+    {
+        return false;
+    }
 
-    // }
-    if (std::strcmp(resultsEnc1[0].c_str(),"$GE") == 0) //&& (std::atoi(resultsEnc1[1].c_str())==1)))
-     {             
+    if (std::strcmp(resultsEnc1[0].c_str(), "$GE") == 0)
+    {             
         boost::erase_all(resultsEnc1[1], "#");
-        val_1 = std::atoi(resultsEnc1[1].c_str());
         boost::erase_all(resultsEnc1[2], "#");
+
+        val_1 = std::atoi(resultsEnc1[1].c_str());
         val_2 = std::atoi(resultsEnc1[2].c_str());
-        //std::cout << "enc1: " << val_1 << std::endl;
-     }
-     
-    // if ((std::strcmp(resultsEnc2[0].c_str(),"$GE") == 0 && (std::atoi(resultsEnc2[1].c_str())==2)))
-  //  {
-       // boost::erase_all(resultsEnc2[2], "#");
-       // val_2 = std::atoi(resultsEnc2[2].c_str());
-        //std::cout << "enc2: " << val_2 << std::endl;
-    // }  
-  }
+       //std::cout << "E1: " << val_1 << " E2: " << val_2<<std::endl;
+        return true;
+    }
+
+    return false;
+}
+
 
   int prvval1 = 0, prvval2 = 0, count= 0;
   
@@ -142,20 +160,16 @@ public:
   int countSendLimit = 5;     //so lan gui
   void set_motor_values(int val1, int val2)
   {
-      if(val1 != prvval1 || val2 != prvval2)
-      {
-        isCount = true; count = 0;
-      }
-      if(isCount)
-      {
-        count++;
-      }
+      if(val1 != prvval1 || val2 != prvval2) { isCount = true; count = 0;}
+    
+      if(isCount) count++;
+    
       if(count > 0 && count <= countSendLimit)
       {
         std::stringstream ss1;
         ss1 << "$SR;" << 2*val1 <<";"<< 2*val2<<"#";
         //std::cout << "M" << std::endl;
-        send_msg(ss1.str());
+        send_msg_velocity(ss1.str());
         //std::cout << "C: " << count << std::endl;
       }
       else {isCount = false; count = 0;}

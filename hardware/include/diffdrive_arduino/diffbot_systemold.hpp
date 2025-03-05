@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <atomic>
 #include <mutex>
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
@@ -102,15 +101,6 @@ private:
   Config cfg_;
   Wheel wheel_l_;
   Wheel wheel_r_;
-  void serial_read_loop();  // Function for the reading thread
-
-  std::thread serial_thread_;
-  std::atomic<bool> running_;  // To control the thread execution
-  std::mutex data_mutex_;      // Protect shared resources
-
-  // Encoder values
-  int left_encoder_ = 0;
-  int right_encoder_ = 0;
 };
 
 }  // namespace diffdrive_arduino

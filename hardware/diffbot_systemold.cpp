@@ -167,27 +167,7 @@ hardware_interface::CallbackReturn DiffDriveArduinoHardware::on_cleanup(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-void DiffDriveArduinoHardware::serial_read_loop()
-{
-    while (running_)
-    {
-        if (!comms_.connected())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            continue;
-        }
 
-        int left_enc = 0, right_enc = 0;
-        if (comms_.read_encoder_values(left_enc, right_enc)) // Now properly checks success
-        {
-            std::lock_guard<std::mutex> lock(data_mutex_);
-            left_encoder_ = left_enc;
-            right_encoder_ = right_enc;
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Adjust read rate
-    }
-}
 hardware_interface::CallbackReturn DiffDriveArduinoHardware::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
@@ -200,8 +180,6 @@ hardware_interface::CallbackReturn DiffDriveArduinoHardware::on_activate(
   {
     comms_.set_pid_values(cfg_.pid_p,cfg_.pid_d,cfg_.pid_i,cfg_.pid_o);
   }
-  running_ = true;
-  serial_thread_ = std::thread(&DiffDriveArduinoHardware::serial_read_loop, this);
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"), "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -211,12 +189,6 @@ hardware_interface::CallbackReturn DiffDriveArduinoHardware::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"), "Deactivating ...please wait...");
-  running_ = false;
-  if (serial_thread_.joinable())
-  {
-    serial_thread_.join();
-  }
-
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"), "Successfully deactivated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -230,14 +202,9 @@ hardware_interface::return_type DiffDriveArduinoHardware::read(
     return hardware_interface::return_type::ERROR;
   }
 
-  //comms_.read_encoder_values(wheel_l_.enc, wheel_r_.enc);
+  comms_.read_encoder_values(wheel_l_.enc, wheel_r_.enc);
 
   double delta_seconds = period.seconds();
-  {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    wheel_l_.enc = left_encoder_;
-    wheel_r_.enc = right_encoder_;
-  }
 
   double pos_prev = wheel_l_.pos;
   wheel_l_.pos = wheel_l_.calc_enc_angle();
